@@ -1,0 +1,260 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish. Must match package.json, with or without a leading v."
+        required: true
+        type: string
+      dry_run:
+        description: "Build and pack artifacts without publishing to npm."
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate release metadata
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      dist_tag: ${{ steps.release.outputs.dist_tag }}
+      publish: ${{ steps.release.outputs.publish }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: release
+        name: Validate version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION_INPUT: ${{ inputs.version }}
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          const eventName = process.env.EVENT_NAME;
+          const refName = process.env.REF_NAME;
+          const versionInput = process.env.VERSION_INPUT || "";
+          const dryRunInput = process.env.DRY_RUN_INPUT || "false";
+
+          let version;
+          if (eventName === "push") {
+            if (!refName.startsWith("v")) {
+              throw new Error(`Release tags must start with v. Got ${refName}.`);
+            }
+            version = refName.slice(1);
+          } else {
+            version = versionInput.replace(/^v/, "");
+          }
+
+          if (!version) {
+            throw new Error("Release version is required.");
+          }
+
+          if (pkg.private === true) {
+            throw new Error("package.json must not be private for npm release.");
+          }
+
+          if (pkg.version !== version) {
+            throw new Error(`Version mismatch: package.json is ${pkg.version}, release is ${version}.`);
+          }
+
+          const distTag = version.includes("-") ? "next" : "latest";
+          const publish = eventName === "push" || dryRunInput !== "true";
+          const output = process.env.GITHUB_OUTPUT;
+
+          fs.appendFileSync(output, `version=${version}\n`);
+          fs.appendFileSync(output, `dist_tag=${distTag}\n`);
+          fs.appendFileSync(output, `publish=${publish ? "true" : "false"}\n`);
+          NODE
+
+  build:
+    name: Build ${{ matrix.package }}
+    runs-on: ${{ matrix.os }}
+    needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            package: linux-x64-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            package: linux-arm64-gnu
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            package: darwin-x64
+          - os: macos-15
+            target: aarch64-apple-darwin
+            package: darwin-arm64
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+            package: win32-x64-msvc
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            package: win32-arm64-msvc
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - run: npm ci
+
+      - name: Sync platform package metadata
+        run: npm run prebuild:packages
+
+      - name: Verify prebuild metadata
+        run: npm run prebuild:verify
+
+      - name: Build native binding
+        run: npx napi build --target ${{ matrix.target }} --release --no-js --dts .napi-generated.d.ts
+
+      - name: Verify generated binding filename
+        run: node -e "require('node:fs').accessSync('acadrust-js.${{ matrix.package }}.node')"
+
+      - name: Build TypeScript
+        run: npm run build:ts
+
+      - name: Typecheck package surface
+        run: npm run typecheck:package
+
+      - name: Run native tests
+        run: npm run test:unit
+
+      - name: Run Rust tests
+        run: cargo test
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binding-${{ matrix.package }}
+          path: acadrust-js.${{ matrix.package }}.node
+          if-no-files-found: error
+
+  publish:
+    name: Publish npm packages
+    runs-on: ubuntu-24.04
+    needs:
+      - validate
+      - build
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NPM_TAG: ${{ needs.validate.outputs.dist_tag }}
+      PUBLISH: ${{ needs.validate.outputs.publish }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build:ts
+
+      - name: Create platform package directories
+        run: npm run prebuild:packages
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binding-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Copy native artifacts into package layout
+        run: npx napi artifacts --output-dir artifacts
+
+      - name: Verify prebuild layout
+        run: npm run prebuild:verify
+
+      - name: Link platform packages as optional dependencies
+        run: npx napi pre-publish --skip-optional-publish
+
+      - name: Verify root package
+        run: npm pack --dry-run
+
+      - name: Verify platform packages
+        run: |
+          for package_dir in npm/*; do
+            npm pack --dry-run "./$package_dir"
+          done
+
+      - name: Publish platform packages
+        run: |
+          set -euo pipefail
+
+          if [ "$PUBLISH" != "true" ]; then
+            echo "Dry run only; skipping npm publish."
+            exit 0
+          fi
+
+          for package_dir in npm/*; do
+            spec=$(node -e "const p = require('./${package_dir}/package.json'); console.log(p.name + '@' + p.version)")
+
+            if npm view "$spec" version >/dev/null 2>&1; then
+              echo "$spec is already published; skipping."
+              continue
+            fi
+
+            npm publish "./$package_dir" --access public --tag "$NPM_TAG" --provenance
+          done
+
+      - name: Publish root package
+        run: |
+          set -euo pipefail
+
+          if [ "$PUBLISH" != "true" ]; then
+            echo "Dry run only; skipping npm publish."
+            exit 0
+          fi
+
+          spec=$(node -e "const p = require('./package.json'); console.log(p.name + '@' + p.version)")
+
+          if npm view "$spec" version >/dev/null 2>&1; then
+            echo "$spec is already published; skipping."
+            exit 0
+          fi
+
+          npm publish --access public --tag "$NPM_TAG" --provenance
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: npm-release-package-layout
+          path: |
+            acadrust-js.*.node
+            dist
+            npm
+            package.json
+            README.md
+            LICENSE*
+            THIRD_PARTY_NOTICES.md

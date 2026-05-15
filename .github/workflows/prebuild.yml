@@ -67,6 +67,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Sync platform package metadata
+        run: npm run prebuild:packages
+
       - name: Verify prebuild metadata
         run: npm run prebuild:verify
 
