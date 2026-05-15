@@ -198,7 +198,7 @@ jobs:
         run: npm run prebuild:verify
 
       - name: Link platform packages as optional dependencies
-        run: npx napi pre-publish --skip-optional-publish
+        run: npm run prebuild:link
 
       - name: Verify root package
         run: npm pack --dry-run
