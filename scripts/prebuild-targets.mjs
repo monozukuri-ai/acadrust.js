@@ -1,6 +1,5 @@
 export const licenseFiles = [
   "LICENSE.md",
-  "LICENSE-MIT",
   "LICENSE-MPL-2.0",
   "THIRD_PARTY_NOTICES.md",
 ];
