@@ -131,7 +131,7 @@ jobs:
         run: npm run prebuild:verify
 
       - name: Build native binding
-        run: npx napi build --target ${{ matrix.target }} --release --no-js --dts .napi-generated.d.ts
+        run: npx napi build --target ${{ matrix.target }} --platform --release --no-js --dts .napi-generated.d.ts
 
       - name: Verify generated binding filename
         run: node -e "require('node:fs').accessSync('acadrust-js.${{ matrix.package }}.node')"
