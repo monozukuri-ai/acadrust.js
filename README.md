@@ -3,18 +3,13 @@
 TypeScript bindings for [acadrust](https://github.com/hakanaktt/acadrust), a Rust library for reading and writing CAD
 files.
 
-This repository has the Phase 0 baseline, Phase 1 native addon skeleton, Phase
-2 DXF read MVP, Phase 3 entity inspection MVP, Phase 4 DXF write MVP, Phase 5
-DWG read/write MVP, Phase 6 async runtime behavior, Phase 7 TypeScript package
-polish, and Phase 8 prebuild packaging in place. The package shape, license
-files, public TypeScript API surface, Rust crate, minimal `napi-rs` smoke
-binding, basic DXF/DWG reading, common entity projection, DXF/DWG round-trip
-writing, native async read/write tasks, subpath exports, consumer typecheck
-coverage, platform package metadata, and GitHub Actions prebuild matrix are
-present.
+The package exposes a compact TypeScript API for DXF/DWG reading, common entity
+inspection, JSON-safe document snapshots, and DXF/DWG writing. Native bindings
+are implemented with `napi-rs`, while `acadrust` is consumed as an unmodified
+Cargo dependency.
 
 Broader entity coverage, release automation hardening, and editing APIs are
-planned for later phases.
+planned future work.
 
 ## Goals
 
@@ -67,6 +62,17 @@ writing.
 The current package entrypoint is ESM. Type-only subpath imports are available
 from `acadrust.js/types`, and stable error constants/classes are available from
 `acadrust.js/errors`.
+
+## Browser Sample
+
+`examples/browser/index.html` is a static CAD preview that renders a generated
+`DrawingJson` snapshot on a canvas. Open it directly in a browser, or regenerate
+the sample data after changing the fixture/projection code:
+
+```sh
+npm run build
+npm run example:browser:data
+```
 
 ## Prebuilt Binaries
 

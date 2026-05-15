@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>acadrust.js browser sample</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <h1>acadrust.js CAD Preview</h1>
+          <p id="sourceLabel">fixtures/entities.dxf</p>
+        </div>
+        <dl class="metrics" aria-label="Drawing summary">
+          <div>
+            <dt>Version</dt>
+            <dd id="versionValue">-</dd>
+          </div>
+          <div>
+            <dt>Entities</dt>
+            <dd id="entityCountValue">-</dd>
+          </div>
+          <div>
+            <dt>Unsupported</dt>
+            <dd id="unsupportedValue">-</dd>
+          </div>
+        </dl>
+      </header>
+
+      <section class="workspace" aria-label="Drawing preview">
+        <aside class="sidebar">
+          <div class="field">
+            <label for="typeFilter">Type</label>
+            <select id="typeFilter"></select>
+          </div>
+          <div class="field">
+            <label for="layerFilter">Layer</label>
+            <select id="layerFilter"></select>
+          </div>
+          <div class="field checkbox-field">
+            <input id="showUnsupported" type="checkbox" checked>
+            <label for="showUnsupported">Unknown</label>
+          </div>
+          <ol id="entityList" class="entity-list" aria-label="Entities"></ol>
+        </aside>
+
+        <section class="canvas-panel">
+          <canvas id="viewport" width="1200" height="820" aria-label="CAD drawing preview"></canvas>
+        </section>
+      </section>
+    </main>
+
+    <script src="./sample-data.js"></script>
+    <script src="./viewer.js"></script>
+  </body>
+</html>

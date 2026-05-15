@@ -47,6 +47,7 @@
     "build:native": "napi build --platform --release --no-js --dts .napi-generated.d.ts",
     "build:ts": "tsc -p tsconfig.json",
     "check": "npm run build && npm run typecheck:package && npm run prebuild:verify && npm run test:unit && npm pack --dry-run",
+    "example:browser:data": "node examples/browser/export-sample.mjs",
     "prebuild:packages": "napi create-npm-dirs && node scripts/sync-prebuild-packages.mjs",
     "prebuild:verify": "node scripts/verify-prebuild-layout.mjs",
     "test": "npm run build && npm run typecheck:package && npm run test:unit",
