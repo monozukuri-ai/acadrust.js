@@ -174,10 +174,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          registry-url: https://registry.npmjs.org
 
       - name: Use npm 11 for trusted publishing
         run: npm install -g npm@11 && npm --version
+
+      - name: Configure npm token
+        if: env.NODE_AUTH_TOKEN != ''
+        run: echo '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}' > ~/.npmrc
 
       - run: npm ci
 

@@ -27,6 +27,11 @@ for (const target of prebuildTargets(packageJson)) {
   const targetPackageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
   const binaryFile = `${binaryName}.${target.suffix}.node`;
 
+  targetPackageJson.description = packageJson.description;
+  targetPackageJson.keywords = packageJson.keywords;
+  targetPackageJson.license = packageJson.license;
+  targetPackageJson.engines = packageJson.engines;
+  targetPackageJson.repository = packageJson.repository;
   targetPackageJson.files = [binaryFile, ...licenseFiles];
 
   writeFileSync(packageJsonPath, `${JSON.stringify(targetPackageJson, null, 2)}\n`);
