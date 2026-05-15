@@ -1,0 +1,23 @@
+[package]
+name = "acadrust-js"
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+description = "Rust binding layer for the acadRust.js TypeScript package"
+repository = "https://github.com/nekanat/acadrust.js"
+publish = false
+
+[lib]
+name = "acadrust_js"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+acadrust = { version = "0.3.4", features = ["serde"] }
+napi = { version = "3.9.0", default-features = false, features = ["napi8"] }
+napi-derive = "3.5.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[build-dependencies]
+napi-build = "2.3.2"

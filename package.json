@@ -1,0 +1,76 @@
+{
+  "name": "acadrust.js",
+  "version": "0.0.0",
+  "description": "TypeScript bindings for acadRust, a Rust CAD library.",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "keywords": [
+    "cad",
+    "dxf",
+    "dwg",
+    "acadrust",
+    "napi-rs"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nekanat/acadrust.js.git"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors.d.ts",
+      "import": "./dist/errors.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE.md",
+    "LICENSE-MIT",
+    "LICENSE-MPL-2.0",
+    "THIRD_PARTY_NOTICES.md",
+    "README.md"
+  ],
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "build": "npm run build:native && npm run build:ts && cargo check",
+    "build:native": "napi build --platform --release --no-js --dts .napi-generated.d.ts",
+    "build:ts": "tsc -p tsconfig.json",
+    "check": "npm run build && npm run typecheck:package && npm run prebuild:verify && npm run test:unit && npm pack --dry-run",
+    "prebuild:packages": "napi create-npm-dirs && node scripts/sync-prebuild-packages.mjs",
+    "prebuild:verify": "node scripts/verify-prebuild-layout.mjs",
+    "test": "npm run build && npm run typecheck:package && npm run test:unit",
+    "test:unit": "vitest run",
+    "typecheck:package": "tsc -p tsconfig.package-test.json"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.6.2",
+    "@types/node": "^25.8.0",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.6"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "napi": {
+    "binaryName": "acadrust-js",
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-pc-windows-msvc",
+      "aarch64-pc-windows-msvc"
+    ]
+  }
+}

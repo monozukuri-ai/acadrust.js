@@ -1,0 +1,34 @@
+{
+  "name": "acadrust.js-win32-x64-msvc",
+  "version": "0.0.0",
+  "cpu": [
+    "x64"
+  ],
+  "main": "acadrust-js.win32-x64-msvc.node",
+  "files": [
+    "acadrust-js.win32-x64-msvc.node",
+    "LICENSE.md",
+    "LICENSE-MIT",
+    "LICENSE-MPL-2.0",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "description": "TypeScript bindings for acadRust, a Rust CAD library.",
+  "keywords": [
+    "cad",
+    "dxf",
+    "dwg",
+    "acadrust",
+    "napi-rs"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nekanat/acadrust.js.git"
+  },
+  "os": [
+    "win32"
+  ]
+}

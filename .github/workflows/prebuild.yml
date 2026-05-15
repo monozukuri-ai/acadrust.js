@@ -1,0 +1,152 @@
+name: Prebuild
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/prebuild.yml"
+      - "Cargo.lock"
+      - "Cargo.toml"
+      - "build.rs"
+      - "fixtures/**"
+      - "npm/**"
+      - "package-lock.json"
+      - "package.json"
+      - "scripts/**"
+      - "src/**"
+      - "test/**"
+      - "ts/**"
+      - "tsconfig*.json"
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.package }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            package: linux-x64-gnu
+          - os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            package: linux-arm64-gnu
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            package: darwin-x64
+          - os: macos-15
+            target: aarch64-apple-darwin
+            package: darwin-arm64
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+            package: win32-x64-msvc
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            package: win32-arm64-msvc
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - run: npm ci
+
+      - name: Verify prebuild metadata
+        run: npm run prebuild:verify
+
+      - name: Build native binding
+        run: npx napi build --target ${{ matrix.target }} --release --no-js --dts .napi-generated.d.ts
+
+      - name: Verify generated binding filename
+        run: node -e "require('node:fs').accessSync('acadrust-js.${{ matrix.package }}.node')"
+
+      - name: Build TypeScript
+        run: npm run build:ts
+
+      - name: Typecheck package surface
+        run: npm run typecheck:package
+
+      - name: Run native tests
+        run: npm run test:unit
+
+      - name: Run Rust tests
+        run: cargo test
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binding-${{ matrix.package }}
+          path: acadrust-js.${{ matrix.package }}.node
+          if-no-files-found: error
+
+  package:
+    name: Verify package artifacts
+    runs-on: ubuntu-24.04
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build TypeScript
+        run: npm run build:ts
+
+      - name: Create platform package directories
+        run: npm run prebuild:packages
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binding-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Copy native artifacts into package layout
+        run: npx napi artifacts --output-dir artifacts
+
+      - name: Verify prebuild layout
+        run: npm run prebuild:verify
+
+      - name: Link platform packages as optional dependencies
+        run: npx napi pre-publish --skip-optional-publish
+
+      - name: Verify root package
+        run: npm pack --dry-run
+
+      - name: Verify platform packages
+        run: |
+          for package_dir in npm/*; do
+            npm pack --dry-run "./$package_dir"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prebuild-package-layout
+          path: |
+            acadrust-js.*.node
+            dist
+            npm
+            package.json
+            README.md
+            LICENSE*
+            THIRD_PARTY_NOTICES.md
