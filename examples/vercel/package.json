@@ -1,0 +1,15 @@
+{
+  "name": "acadrust-js-vercel-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.mjs",
+    "vercel:dev": "vercel dev"
+  },
+  "dependencies": {
+    "acadrust.js": "^0.0.1"
+  },
+  "engines": {
+    "node": "22.x"
+  }
+}

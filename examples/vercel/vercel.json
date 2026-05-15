@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/parse-dxf.mjs": {
+      "includeFiles": "node_modules/acadrust.js-linux-x64-gnu/**"
+    }
+  }
+}

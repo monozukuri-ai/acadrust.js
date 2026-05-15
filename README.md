@@ -73,6 +73,11 @@ npm run build
 npm run example:browser:data
 ```
 
+`examples/vercel` is a deployable DXF preview app. It uploads DXF bytes to a
+Vercel Node function, parses them with `acadrust.js`, and renders the returned
+`DrawingJson` in the browser. See `examples/vercel/README.md` for deployment
+steps.
+
 ## Prebuilt Binaries
 
 The root package is kept JavaScript-only for release packaging. Native binaries
