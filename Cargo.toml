@@ -3,7 +3,7 @@ name = "acadrust-js"
 version = "0.0.0"
 edition = "2021"
 license = "MIT"
-description = "Rust binding layer for the acadRust.js TypeScript package"
+description = "Rust binding layer for the acadrust.js TypeScript package"
 repository = "https://github.com/nekanat/acadrust.js"
 publish = false
 

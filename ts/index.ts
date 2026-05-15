@@ -34,7 +34,7 @@ function nativeFor(document: Document): NativeDocument {
 }
 
 /**
- * A loaded CAD document backed by the native acadRust document model.
+ * A loaded CAD document backed by the native acadrust document model.
  *
  * Document instances are returned by read functions. Constructing this class
  * directly is not supported because the native document state must be created

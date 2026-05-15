@@ -134,7 +134,7 @@ function findNativeBinding(): NativeBinding {
   const suffix = platform ? ` for ${platform}` : ` for ${process.platform}-${process.arch}`;
   const details = loadErrors.length > 0 ? ` Tried:\n${loadErrors.map((error) => `- ${error}`).join("\n")}` : "";
 
-  throw new Error(`Unable to find the acadRust.js native binding${suffix}.${details}`);
+  throw new Error(`Unable to find the acadrust.js native binding${suffix}.${details}`);
 }
 
 export function loadNativeBinding(): NativeBinding {

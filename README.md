@@ -4,7 +4,7 @@ TypeScript bindings for [acadrust](https://github.com/hakanaktt/acadrust), a Rus
 files.
 
 The package exposes a compact TypeScript API for DXF/DWG reading, entity
-inspection for all acadRust entity variants, JSON-safe document snapshots, and
+inspection for all acadrust entity variants, JSON-safe document snapshots, and
 DXF/DWG writing. Native bindings are implemented with `napi-rs`, while
 `acadrust` is consumed as an unmodified Cargo dependency.
 

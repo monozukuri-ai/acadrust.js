@@ -12,7 +12,7 @@ prebuilt native binaries, this file must be updated for every release with:
 
 ## Planned Runtime Dependency
 
-### acadRust
+### acadrust
 
 - License: MPL-2.0
 - Version: 0.3.4

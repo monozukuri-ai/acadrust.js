@@ -1,4 +1,4 @@
-#![doc = "Rust binding crate for acadRust.js."]
+#![doc = "Rust binding crate for acadrust.js."]
 
 use acadrust::{
     entities::EntityCommon,

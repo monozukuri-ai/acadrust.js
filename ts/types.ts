@@ -58,7 +58,7 @@ export interface Point3d extends Point2d {
 
 /** Fields shared by every projected entity. */
 export interface EntityBase {
-  /** Projected DXF/acadRust entity type name. */
+  /** Projected DXF/acadrust entity type name. */
   readonly type: EntityTypeName;
   /** CAD handle as an uppercase hexadecimal string when present. */
   readonly handle?: string;
@@ -68,7 +68,7 @@ export interface EntityBase {
   readonly variant?: EntityVariantName;
   /** Original DXF entity name when it differs from `type`, or when unknown. */
   readonly rawType?: string;
-  /** Serialized acadRust entity payload for fields not lifted to top-level properties. */
+  /** Serialized acadrust entity payload for fields not lifted to top-level properties. */
   readonly data?: unknown;
 }
 
@@ -244,12 +244,12 @@ export interface SplineEntity extends EntityBase {
   readonly knots: readonly number[];
 }
 
-/** Entity whose full acadRust payload is available through `data`. */
+/** Entity whose full acadrust payload is available through `data`. */
 export interface RawEntity<TType extends RawEntityTypeName = RawEntityTypeName> extends EntityBase {
   readonly type: TType;
 }
 
-/** Fallback projection for entities acadRust itself reports as unknown. */
+/** Fallback projection for entities acadrust itself reports as unknown. */
 export interface UnknownEntity extends EntityBase {
   readonly type: "UNKNOWN";
   /** Original CAD entity type when available. */

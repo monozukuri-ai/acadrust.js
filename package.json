@@ -1,7 +1,7 @@
 {
   "name": "acadrust.js",
   "version": "0.0.0",
-  "description": "TypeScript bindings for acadRust, a Rust CAD library.",
+  "description": "TypeScript bindings for acadrust, a Rust CAD library.",
   "private": true,
   "type": "module",
   "license": "MIT",

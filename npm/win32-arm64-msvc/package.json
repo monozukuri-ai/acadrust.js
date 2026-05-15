@@ -12,7 +12,7 @@
     "LICENSE-MPL-2.0",
     "THIRD_PARTY_NOTICES.md"
   ],
-  "description": "TypeScript bindings for acadRust, a Rust CAD library.",
+  "description": "TypeScript bindings for acadrust, a Rust CAD library.",
   "keywords": [
     "cad",
     "dxf",
