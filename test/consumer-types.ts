@@ -11,7 +11,7 @@ import {
   type LineEntity,
 } from "acadrust.js";
 import type { AcadrustJsErrorCode } from "acadrust.js/errors";
-import type { CircleEntity } from "acadrust.js/types";
+import type { CircleEntity, EntityTypeName, MTextEntity, RawEntity } from "acadrust.js/types";
 
 // @ts-expect-error Documents are created by read functions, not direct construction.
 new Document();
@@ -39,17 +39,30 @@ function checkSyncApi(): void {
   const lines = dxfDoc.entities({ type: "LINE" });
   const line: LineEntity | undefined = lines[0]?.type === "LINE" ? lines[0] : undefined;
   const code: AcadrustJsErrorCode = ACADRUST_READ_ERROR;
+  const entityType: EntityTypeName = "POLYFACE_MESH";
   const circle: CircleEntity = {
     type: "CIRCLE",
     center: { x: 0, y: 0, z: 0 },
     radius: 1,
+  };
+  const mtext: MTextEntity = {
+    type: "MTEXT",
+    value: "hello",
+    insertionPoint: { x: 0, y: 0, z: 0 },
+  };
+  const hatch: RawEntity<"HATCH"> = {
+    type: "HATCH",
+    data: {},
   };
 
   dxfDoc.toJSON({ includeUnknownEntities: false });
   dwgDoc.summary();
   line?.start.x.toFixed();
   code.toLowerCase();
+  entityType.toLowerCase();
   circle.radius.toFixed();
+  mtext.value.toUpperCase();
+  hatch.type.toLowerCase();
 }
 
 function checkErrors(error: unknown): string {

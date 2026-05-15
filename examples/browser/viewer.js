@@ -10,11 +10,17 @@
   const entityList = document.querySelector("#entityList");
 
   const colors = {
+    POINT: "#394b59",
     LINE: "#0f6b99",
     CIRCLE: "#bd3f32",
     ARC: "#7a4bb3",
+    ELLIPSE: "#7a4bb3",
     POLYLINE: "#1d7a46",
+    POLYLINE_2D: "#1d7a46",
+    POLYLINE_3D: "#1d7a46",
+    LWPOLYLINE: "#1d7a46",
     TEXT: "#9a5a00",
+    MTEXT: "#9a5a00",
     UNKNOWN: "#68707a",
   };
 
@@ -90,15 +96,19 @@
       context.fillStyle = colors[entity.type] || colors.UNKNOWN;
       context.lineWidth = entity.type === "UNKNOWN" ? 1 : 2;
 
-      if (entity.type === "LINE") {
+      if (entity.type === "POINT") {
+        drawPoint(entity, transform);
+      } else if (entity.type === "LINE") {
         drawLine(entity, transform);
       } else if (entity.type === "CIRCLE") {
         drawCircle(entity, transform);
       } else if (entity.type === "ARC") {
         drawArc(entity, transform);
-      } else if (entity.type === "POLYLINE") {
+      } else if (entity.type === "ELLIPSE") {
+        drawEllipse(entity, transform);
+      } else if (isPolyline(entity)) {
         drawPolyline(entity, transform);
-      } else if (entity.type === "TEXT") {
+      } else if (isText(entity)) {
         drawText(entity, transform);
       } else {
         drawUnknown(entity, transform, rect.width, rect.height);
@@ -128,6 +138,13 @@
     context.restore();
   }
 
+  function drawPoint(entity, transform) {
+    const point = transform.point(entity.location);
+    context.beginPath();
+    context.arc(point.x, point.y, 4, 0, Math.PI * 2);
+    context.fill();
+  }
+
   function drawLine(entity, transform) {
     const start = transform.point(entity.start);
     const end = transform.point(entity.end);
@@ -153,6 +170,26 @@
       entity.radius * transform.scale,
       -entity.endAngle,
       -entity.startAngle,
+      false,
+    );
+    context.stroke();
+  }
+
+  function drawEllipse(entity, transform) {
+    const center = transform.point(entity.center);
+    const radiusX = vectorLength(entity.majorAxis) * transform.scale;
+    const radiusY = radiusX * entity.minorAxisRatio;
+    const rotation = -Math.atan2(entity.majorAxis.y, entity.majorAxis.x);
+
+    context.beginPath();
+    context.ellipse(
+      center.x,
+      center.y,
+      radiusX,
+      radiusY,
+      rotation,
+      -entity.endParameter,
+      -entity.startParameter,
       false,
     );
     context.stroke();
@@ -234,6 +271,10 @@
       return `${layer} / (${format(entity.start.x)}, ${format(entity.start.y)}) to (${format(entity.end.x)}, ${format(entity.end.y)})`;
     }
 
+    if (entity.type === "POINT") {
+      return `${layer} / (${format(entity.location.x)}, ${format(entity.location.y)})`;
+    }
+
     if (entity.type === "CIRCLE") {
       return `${layer} / center (${format(entity.center.x)}, ${format(entity.center.y)}), r ${format(entity.radius)}`;
     }
@@ -242,15 +283,19 @@
       return `${layer} / center (${format(entity.center.x)}, ${format(entity.center.y)}), r ${format(entity.radius)}`;
     }
 
-    if (entity.type === "POLYLINE") {
+    if (entity.type === "ELLIPSE") {
+      return `${layer} / center (${format(entity.center.x)}, ${format(entity.center.y)}), major ${format(vectorLength(entity.majorAxis))}`;
+    }
+
+    if (isPolyline(entity)) {
       return `${layer} / ${entity.vertices.length} vertices${entity.closed ? ", closed" : ""}`;
     }
 
-    if (entity.type === "TEXT") {
+    if (isText(entity)) {
       return `${layer} / ${entity.value}`;
     }
 
-    return `${layer} / ${entity.rawType || "unsupported"}`;
+    return `${layer} / ${entity.rawType || entity.variant || "unsupported"}`;
   }
 
   function boundsFor(entities) {
@@ -264,10 +309,19 @@
           { x: entity.center.x - entity.radius, y: entity.center.y - entity.radius },
           { x: entity.center.x + entity.radius, y: entity.center.y + entity.radius },
         );
-      } else if (entity.type === "POLYLINE") {
+      } else if (entity.type === "ELLIPSE") {
+        const major = vectorLength(entity.majorAxis);
+        const radius = major * Math.max(1, entity.minorAxisRatio);
+        points.push(
+          { x: entity.center.x - radius, y: entity.center.y - radius },
+          { x: entity.center.x + radius, y: entity.center.y + radius },
+        );
+      } else if (isPolyline(entity)) {
         points.push(...entity.vertices);
-      } else if (entity.type === "TEXT") {
+      } else if (isText(entity)) {
         points.push(entity.insertionPoint);
+      } else if (entity.type === "POINT") {
+        points.push(entity.location);
       }
     }
 
@@ -307,5 +361,20 @@
 
   function format(value) {
     return Number(value).toFixed(2).replace(/\.00$/, "");
+  }
+
+  function isPolyline(entity) {
+    return entity.type === "POLYLINE" ||
+      entity.type === "POLYLINE_2D" ||
+      entity.type === "POLYLINE_3D" ||
+      entity.type === "LWPOLYLINE";
+  }
+
+  function isText(entity) {
+    return entity.type === "TEXT" || entity.type === "MTEXT";
+  }
+
+  function vectorLength(vector) {
+    return Math.hypot(vector.x, vector.y, vector.z || 0);
   }
 })();

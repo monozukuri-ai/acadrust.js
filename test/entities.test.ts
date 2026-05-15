@@ -12,9 +12,9 @@ describe("Document.entities", () => {
       "LINE",
       "CIRCLE",
       "ARC",
-      "POLYLINE",
+      "LWPOLYLINE",
       "TEXT",
-      "UNKNOWN",
+      "MTEXT",
     ]);
 
     expect(entities[0]).toMatchObject({
@@ -38,7 +38,8 @@ describe("Document.entities", () => {
     });
 
     expect(entities[3]).toMatchObject({
-      type: "POLYLINE",
+      type: "LWPOLYLINE",
+      variant: "LwPolyline",
       closed: true,
       vertices: [
         { x: 0, y: 0, z: 0 },
@@ -57,8 +58,10 @@ describe("Document.entities", () => {
     expect(entities[4].rotation).toBeCloseTo((0.25 * Math.PI) / 180);
 
     expect(entities[5]).toMatchObject({
-      type: "UNKNOWN",
-      rawType: "MTEXT",
+      type: "MTEXT",
+      variant: "MText",
+      value: "Unsupported projection",
+      data: expect.any(Object),
     });
   });
 
@@ -66,17 +69,19 @@ describe("Document.entities", () => {
     const doc = readDxfSync("fixtures/entities.dxf");
 
     expect(doc.entities({ type: "LINE" })).toHaveLength(1);
+    expect(doc.entities({ type: "LWPOLYLINE" })).toHaveLength(1);
     expect(doc.entities({ layer: "ANNOTATION" }).map((entity) => entity.type)).toEqual([
       "TEXT",
-      "UNKNOWN",
+      "MTEXT",
     ]);
     expect(doc.entities({ type: "TEXT", layer: "ANNOTATION" })).toHaveLength(1);
   });
 
-  it("includes projected unknown entities in the summary", () => {
+  it("reports only raw unknown entities as unsupported", () => {
     const doc = readDxfSync("fixtures/entities.dxf");
 
-    expect(doc.summary().unsupportedEntityCount).toBe(1);
+    expect(doc.summary().unsupportedEntityCount).toBe(0);
     expect(doc.toJSON().entities).toHaveLength(6);
+    expect(doc.toJSON({ includeUnknownEntities: false }).entities).toHaveLength(6);
   });
 });

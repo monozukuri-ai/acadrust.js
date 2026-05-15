@@ -19,7 +19,7 @@ export interface JsonOptions {
 /** Filter used by `Document.entities()`. */
 export interface EntityFilter {
   /** Return only entities with this projected type. */
-  readonly type?: Entity["type"];
+  readonly type?: EntityTypeName;
   /** Return only entities on this layer. */
   readonly layer?: string;
 }
@@ -58,10 +58,123 @@ export interface Point3d extends Point2d {
 
 /** Fields shared by every projected entity. */
 export interface EntityBase {
+  /** Projected DXF/acadRust entity type name. */
+  readonly type: EntityTypeName;
   /** CAD handle as an uppercase hexadecimal string when present. */
   readonly handle?: string;
   /** CAD layer name. */
   readonly layer?: string;
+  /** Rust `EntityType` variant that produced this projection. */
+  readonly variant?: EntityVariantName;
+  /** Original DXF entity name when it differs from `type`, or when unknown. */
+  readonly rawType?: string;
+  /** Serialized acadRust entity payload for fields not lifted to top-level properties. */
+  readonly data?: unknown;
+}
+
+/** Projected entity type names exposed by `Document.entities()`. */
+export type EntityTypeName =
+  | "POINT"
+  | "LINE"
+  | "CIRCLE"
+  | "ARC"
+  | "ELLIPSE"
+  | "POLYLINE"
+  | "POLYLINE_2D"
+  | "POLYLINE_3D"
+  | "LWPOLYLINE"
+  | "TEXT"
+  | "MTEXT"
+  | "SPLINE"
+  | "DIMENSION_ALIGNED"
+  | "DIMENSION_LINEAR"
+  | "DIMENSION_RADIUS"
+  | "DIMENSION_DIAMETER"
+  | "DIMENSION_ANGULAR_2LINE"
+  | "DIMENSION_ANGULAR_3POINT"
+  | "DIMENSION_ORDINATE"
+  | "HATCH"
+  | "SOLID"
+  | "3DFACE"
+  | "INSERT"
+  | "MINSERT"
+  | "BLOCK"
+  | "ENDBLK"
+  | "RAY"
+  | "XLINE"
+  | "VIEWPORT"
+  | "ATTDEF"
+  | "ATTRIB"
+  | "LEADER"
+  | "MULTILEADER"
+  | "MLINE"
+  | "MESH"
+  | "IMAGE"
+  | "3DSOLID"
+  | "REGION"
+  | "BODY"
+  | "ACAD_TABLE"
+  | "TOLERANCE"
+  | "POLYFACE_MESH"
+  | "WIPEOUT"
+  | "SHAPE"
+  | "PDFUNDERLAY"
+  | "DWFUNDERLAY"
+  | "DGNUNDERLAY"
+  | "SEQEND"
+  | "OLE2FRAME"
+  | "POLYGON_MESH"
+  | "UNKNOWN";
+
+/** Rust `EntityType` variants represented by the projection. */
+export type EntityVariantName =
+  | "Point"
+  | "Line"
+  | "Circle"
+  | "Arc"
+  | "Ellipse"
+  | "Polyline"
+  | "Polyline2D"
+  | "Polyline3D"
+  | "LwPolyline"
+  | "Text"
+  | "MText"
+  | "Spline"
+  | "Dimension"
+  | "Hatch"
+  | "Solid"
+  | "Face3D"
+  | "Insert"
+  | "Block"
+  | "BlockEnd"
+  | "Ray"
+  | "XLine"
+  | "Viewport"
+  | "AttributeDefinition"
+  | "AttributeEntity"
+  | "Leader"
+  | "MultiLeader"
+  | "MLine"
+  | "Mesh"
+  | "RasterImage"
+  | "Solid3D"
+  | "Region"
+  | "Body"
+  | "Table"
+  | "Tolerance"
+  | "PolyfaceMesh"
+  | "Wipeout"
+  | "Shape"
+  | "Underlay"
+  | "Seqend"
+  | "Ole2Frame"
+  | "PolygonMesh"
+  | "Unknown";
+
+/** Projected POINT entity. */
+export interface PointEntity extends EntityBase {
+  readonly type: "POINT";
+  readonly location: Point3d;
 }
 
 /** Projected LINE entity. */
@@ -87,9 +200,19 @@ export interface ArcEntity extends EntityBase {
   readonly endAngle: number;
 }
 
+/** Projected ELLIPSE entity. */
+export interface EllipseEntity extends EntityBase {
+  readonly type: "ELLIPSE";
+  readonly center: Point3d;
+  readonly majorAxis: Point3d;
+  readonly minorAxisRatio: number;
+  readonly startParameter: number;
+  readonly endParameter: number;
+}
+
 /** Projected lightweight or heavy polyline entity. */
 export interface PolylineEntity extends EntityBase {
-  readonly type: "POLYLINE";
+  readonly type: "POLYLINE" | "POLYLINE_2D" | "POLYLINE_3D" | "LWPOLYLINE";
   readonly vertices: readonly Point3d[];
   readonly closed: boolean;
 }
@@ -103,18 +226,64 @@ export interface TextEntity extends EntityBase {
   readonly rotation?: number;
 }
 
-/** Fallback projection for unsupported or intentionally unprojected entity types. */
+/** Projected multi-line MTEXT entity. */
+export interface MTextEntity extends EntityBase {
+  readonly type: "MTEXT";
+  readonly value: string;
+  readonly insertionPoint: Point3d;
+  readonly height?: number;
+  readonly rotation?: number;
+}
+
+/** Projected SPLINE entity. */
+export interface SplineEntity extends EntityBase {
+  readonly type: "SPLINE";
+  readonly degree: number;
+  readonly controlPoints: readonly Point3d[];
+  readonly fitPoints: readonly Point3d[];
+  readonly knots: readonly number[];
+}
+
+/** Entity whose full acadRust payload is available through `data`. */
+export interface RawEntity<TType extends RawEntityTypeName = RawEntityTypeName> extends EntityBase {
+  readonly type: TType;
+}
+
+/** Fallback projection for entities acadRust itself reports as unknown. */
 export interface UnknownEntity extends EntityBase {
   readonly type: "UNKNOWN";
   /** Original CAD entity type when available. */
   readonly rawType?: string;
 }
 
+/** Entity names represented through the generic `RawEntity` shape. */
+export type RawEntityTypeName = Exclude<
+  EntityTypeName,
+  | "POINT"
+  | "LINE"
+  | "CIRCLE"
+  | "ARC"
+  | "ELLIPSE"
+  | "POLYLINE"
+  | "POLYLINE_2D"
+  | "POLYLINE_3D"
+  | "LWPOLYLINE"
+  | "TEXT"
+  | "MTEXT"
+  | "SPLINE"
+  | "UNKNOWN"
+>;
+
 /** Supported TypeScript projection for a CAD entity. */
 export type Entity =
+  | PointEntity
   | LineEntity
   | CircleEntity
   | ArcEntity
+  | EllipseEntity
   | PolylineEntity
   | TextEntity
+  | MTextEntity
+  | SplineEntity
+  | RawEntity
   | UnknownEntity;

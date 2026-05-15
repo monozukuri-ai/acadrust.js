@@ -3,13 +3,12 @@
 TypeScript bindings for [acadrust](https://github.com/hakanaktt/acadrust), a Rust library for reading and writing CAD
 files.
 
-The package exposes a compact TypeScript API for DXF/DWG reading, common entity
-inspection, JSON-safe document snapshots, and DXF/DWG writing. Native bindings
-are implemented with `napi-rs`, while `acadrust` is consumed as an unmodified
-Cargo dependency.
+The package exposes a compact TypeScript API for DXF/DWG reading, entity
+inspection for all acadRust entity variants, JSON-safe document snapshots, and
+DXF/DWG writing. Native bindings are implemented with `napi-rs`, while
+`acadrust` is consumed as an unmodified Cargo dependency.
 
-Broader entity coverage, release automation hardening, and editing APIs are
-planned future work.
+Release automation hardening and editing APIs are planned future work.
 
 ## Goals
 
